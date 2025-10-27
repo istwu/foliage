@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Foliage</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Your Portfolios</h2>
+      <button id="logoutBtn" class="btn danger">Logout</button>
+    </div>
+    <div id="portfolioList"></div>
+
+    <h3>Create New Portfolio</h3>
+    <input type="text" id="newPortfolioName" placeholder="Portfolio Name">
+    <button id="createBtn" class="btn">Create</button>
+  </div>
+
+  <script>
+    const API_BASE = "/api";
+    const userKey = "foliage_user";
+
+    function getCurrentUser() {
+      const stored = localStorage.getItem(userKey);
+      if (!stored || stored === "undefined") {
+        console.warn("No user in localStorage:", stored);
+        return null;
+      }
+      try {
+        return JSON.parse(stored);
+      } catch (err) {
+        console.error("Invalid JSON in localStorage:", stored);
+        localStorage.removeItem(userKey);
+        return null;
+      }
+    }
+
+    const user = getCurrentUser();
+    if (!user || !user.ID) {
+      console.error("No valid user found:", user);
+      localStorage.removeItem(userKey);
+      window.location.href = "/index.html";
+    }
+
+    async function loadPortfolios() {
+      const res = await fetch(`${API_BASE}/portfolio?user_id=${user.ID}`);
+      const portfolios = await res.json();
+      const container = document.getElementById("portfolioList");
+      container.innerHTML = "";
+
+      if (portfolios.length === 0) {
+        container.innerHTML = "<p>No portfolios yet. Create one below!</p>";
+        return;
+      }
+
+      portfolios.forEach(p => {
+        const div = document.createElement("div");
+        div.classList.add("portfolio-card");
+        div.innerHTML = `
+          <h4>${p.name}</h4>
+          <a href="/portfolio.html?id=${p.id}" class="btn small">View</a>
+          <button onclick="deletePortfolio(${p.id})" class="btn small danger">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function deletePortfolio(id) {
+      await fetch(`${API_BASE}/portfolio/${id}`, { method: "DELETE" });
+      loadPortfolios();
+    }
+
+    document.getElementById("createBtn").addEventListener("click", async () => {
+      const name = document.getElementById("newPortfolioName").value.trim();
+      if (!name) return alert("Please enter a portfolio name.");
+
+      await fetch(`${API_BASE}/portfolio`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.ID, name: name })
+      });
+      document.getElementById("newPortfolioName").value = "";
+      loadPortfolios();
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem(userKey);
+      window.location.href = "/index.html";
+    });
+
+    loadPortfolios();
+  </script>
+</body>
+</html>

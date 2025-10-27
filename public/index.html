@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Foliage</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container center">
+    <h1>Welcome to Foliage</h1>
+    <p>A simple portfolio platform for artists and writers.</p>
+
+    <div id="loginForm">
+      <input type="text" id="username" placeholder="Username" required><br>
+      <!-- <input type="password" id="password" placeholder="Password" required><br> -->
+      <button id="loginBtn" class="btn full">Log In</button>
+      <p>Don’t have an account? <a href="/register.html">Sign up</a></p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "/api/auth";
+    const userKey = "foliage_user";
+
+    // Check login state
+    const existingUser = localStorage.getItem(userKey);
+    if (existingUser) {
+      window.location.href = "/dashboard.html";
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const username = document.getElementById("username").value.trim();
+      // const password = document.getElementById("password").value.trim();
+      if (!username) return alert("Please enter a username.");
+
+      const res = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      });
+
+      if (res.ok) {
+        const resJson = await res.json();
+        const user = resJson.user
+        if (!user || !user.ID) {
+          console.error("Invalid login response:", resJson);
+          alert("Login failed: invalid server response.");
+          return;
+        }
+        localStorage.setItem("foliage_user", JSON.stringify(user));
+        window.location.href = "/dashboard.html";
+      } else {
+        alert("Invalid username.");
+      }
+    });
+  </script>
+</body>
+</html>
