@@ -25,3 +25,7 @@ func ListPosts(c *fiber.Ctx) error {
 func UploadFile(c *fiber.Ctx) error {
 	return services.UploadFile(c)
 }
+
+func ReorderPosts(c *fiber.Ctx) error {
+	return services.ReorderPosts(c)
+}

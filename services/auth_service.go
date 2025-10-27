@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Add new user to database
 func RegisterUser(c *fiber.Ctx) error {
 	data := new(struct {
 		Email    string `json:"email"`
@@ -34,6 +35,7 @@ func RegisterUser(c *fiber.Ctx) error {
 	})
 }
 
+// Check username against DB
 func LoginUser(c *fiber.Ctx) error {
 	data := new(struct {
 		Username string `json:"username"`
@@ -43,6 +45,7 @@ func LoginUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
+	// Log the user in if they exist in the DB
 	var user models.User
 	if err := config.DB.Where("username = ?", data.Username).First(&user).Error; err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid username"})

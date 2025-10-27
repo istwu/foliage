@@ -7,8 +7,10 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
+// Create new "image" type post in DB
 func CreateImagePost(c *fiber.Ctx) error {
 	data := new(struct {
 		UserID      uint   `json:"user_id"`
@@ -17,10 +19,10 @@ func CreateImagePost(c *fiber.Ctx) error {
 		ImageURL    string `json:"image_url"`
 	})
 
+	// Check if post submission is valid
 	if err := c.BodyParser(data); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
-
 	if data.ImageURL == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Image URL is required"})
 	}
@@ -38,6 +40,7 @@ func CreateImagePost(c *fiber.Ctx) error {
 	return c.JSON(post)
 }
 
+// Create new "text" type post in DB
 func CreateTextPost(c *fiber.Ctx) error {
 	data := new(struct {
 		UserID      uint   `json:"user_id"`
@@ -45,10 +48,11 @@ func CreateTextPost(c *fiber.Ctx) error {
 		PostType    string `json:"post_type"`
 		TextBody    string `json:"text_body"`
 	})
+
+	// Check if post submission is valid
 	if err := c.BodyParser(data); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
-
 	if len(data.TextBody) == 0 {
 		return c.Status(400).JSON(fiber.Map{"error": "Post cannot be blank"})
 	}
@@ -69,6 +73,7 @@ func CreateTextPost(c *fiber.Ctx) error {
 	return c.JSON(post)
 }
 
+// Remove specified post from DB
 func DeletePost(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -99,6 +104,7 @@ func DeletePost(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Post deleted successfully"})
 }
 
+// Get posts associated with specific portfolio
 func ListPosts(c *fiber.Ctx) error {
 	portfolioIDStr := c.Query("portfolio_id")
 	if portfolioIDStr == "" {
@@ -112,7 +118,9 @@ func ListPosts(c *fiber.Ctx) error {
 
 	var portfolio models.Portfolio
 	// Preload Posts correctly and query by numeric ID
-	if err := config.DB.Preload("Posts").First(&portfolio, portfolioID).Error; err != nil {
+	if err := config.DB.Preload("Posts", func(db *gorm.DB) *gorm.DB {
+		return db.Order("position ASC")
+	}).First(&portfolio, portfolioID).Error; err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Portfolio not found"})
 	}
 
@@ -120,9 +128,8 @@ func ListPosts(c *fiber.Ctx) error {
 	return c.JSON(portfolio.Posts)
 }
 
+// Send file to static uploads folder
 func UploadFile(c *fiber.Ctx) error {
-	fmt.Println(">>> UploadFile handler reached")
-
 	file, err := c.FormFile("file")
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "No file uploaded"})
@@ -132,4 +139,32 @@ func UploadFile(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to save file"})
 	}
 	return c.JSON(fiber.Map{"url": "/" + savePath})
+}
+
+// Update positions of posts in portfolio
+func ReorderPosts(c *fiber.Ctx) error {
+	data := new(struct {
+		PortfolioID uint   `json:"portfolio_id"`
+		PostIDs     []uint `json:"post_ids"`
+	})
+
+	if err := c.BodyParser(data); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	// Validate input
+	if data.PortfolioID == 0 || len(data.PostIDs) == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Missing portfolio_id or post_ids"})
+	}
+
+	// Update each post's position
+	for i, postID := range data.PostIDs {
+		if err := config.DB.Model(&models.Post{}).
+			Where("id = ? AND portfolio_id = ?", postID, data.PortfolioID).
+			Update("position", i+1).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+	}
+
+	return c.JSON(fiber.Map{"message": "Posts reordered successfully"})
 }

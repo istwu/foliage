@@ -18,20 +18,34 @@
   </div>
 
   <script>
+    const API_BASE = "/api/auth";
+    const userKey = "foliage_user";
+
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const res = await fetch("/api/auth/register", {
+      const username = document.getElementById("username").value.trim();
+      if (!username) return alert("Please enter a username.");
+      
+      // Register new user based on username input
+      const res = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // email: document.getElementById("email").value,
-          username: document.getElementById("username").value,
-          // password: document.getElementById("password").value
+          username: username,
         })
       });
-      const data = await res.json();
-      if (data.message) window.location.href = "/dashboard.html";
-      else alert(data.error);
+
+      if (res.ok) {
+        const resJson = await res.json();
+        const user = resJson.user
+        if (!user || !user.ID) {
+          console.error("Invalid registration response:", resJson);
+          alert("Registration failed: invalid server response.");
+          return;
+        }
+        localStorage.setItem("foliage_user", JSON.stringify(user));
+        window.location.href = "/dashboard.html";
+      }
     });
   </script>
 </body>

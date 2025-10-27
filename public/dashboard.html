@@ -22,6 +22,7 @@
     const API_BASE = "/api";
     const userKey = "foliage_user";
 
+    // Get info for currently logged in user
     function getCurrentUser() {
       const stored = localStorage.getItem(userKey);
       if (!stored || stored === "undefined") {
@@ -37,6 +38,7 @@
       }
     }
 
+    // Redirect to index if there is no logged in user
     const user = getCurrentUser();
     if (!user || !user.ID) {
       console.error("No valid user found:", user);
@@ -44,6 +46,7 @@
       window.location.href = "/index.html";
     }
 
+    // Get and display list of portfolios for user
     async function loadPortfolios() {
       const res = await fetch(`${API_BASE}/portfolio?user_id=${user.ID}`);
       const portfolios = await res.json();
@@ -72,6 +75,7 @@
       loadPortfolios();
     }
 
+    // Button to create new portfolio
     document.getElementById("createBtn").addEventListener("click", async () => {
       const name = document.getElementById("newPortfolioName").value.trim();
       if (!name) return alert("Please enter a portfolio name.");

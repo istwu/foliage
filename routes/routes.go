@@ -7,23 +7,25 @@ import (
 )
 
 func SetupRoutes(app *fiber.App) {
+	// Base API group
 	api := app.Group("/api")
 
-	auth := api.Group("/auth")
-	auth.Post("/register", controllers.Register)
-	auth.Post("/login", controllers.Login)
+	// Auth routes
+	api.Post("/auth/register", controllers.Register)
+	api.Post("/auth/login", controllers.Login)
 
-	portfolio := api.Group("/portfolio")
-	portfolio.Get("/posts", controllers.ListPosts)
-	portfolio.Get("/:id", controllers.GetPortfolioByID)
-	portfolio.Post("/", controllers.CreatePortfolio)
-	portfolio.Get("/", controllers.ListPortfolios)
-	portfolio.Delete("/:id", controllers.DeletePortfolio)
-	portfolio.Put("/:id/rename", controllers.RenamePortfolio)
+	// Portfolio routes
+	api.Get("/portfolio/posts", controllers.ListPosts)
+	api.Get("/portfolio/:id", controllers.GetPortfolioByID)
+	api.Post("/portfolio", controllers.CreatePortfolio)
+	api.Get("/portfolio", controllers.ListPortfolios)
+	api.Delete("/portfolio/:id", controllers.DeletePortfolio)
+	api.Put("/portfolio/:id/rename", controllers.RenamePortfolio)
 
-	post := api.Group("/post")
-	post.Post("/upload", controllers.UploadFile)
-	post.Post("/image", controllers.CreateImagePost)
-	post.Post("/text", controllers.CreateTextPost)
-	post.Delete("/:id", controllers.DeletePost)
+	// Post routes
+	api.Post("/post/upload", controllers.UploadFile)
+	api.Post("/post/image", controllers.CreateImagePost)
+	api.Post("/post/text", controllers.CreateTextPost)
+	api.Post("/post/reorder", controllers.ReorderPosts)
+	api.Delete("/post/:id", controllers.DeletePost)
 }

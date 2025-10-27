@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Return portfolio info based on ID
 func GetPortfolioByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -18,6 +19,7 @@ func GetPortfolioByID(c *fiber.Ctx) error {
 	return c.JSON(portfolio)
 }
 
+// Add new portfolio info to DB
 func CreatePortfolio(c *fiber.Ctx) error {
 	data := new(struct {
 		ID     uint   `json:"id" gorm:"primaryKey"`
@@ -40,6 +42,7 @@ func CreatePortfolio(c *fiber.Ctx) error {
 	return c.JSON(portfolio)
 }
 
+// Get list of specified user's portfolios
 func ListPortfolios(c *fiber.Ctx) error {
 	userID := c.Query("user_id")
 	var portfolios []models.Portfolio
@@ -47,6 +50,7 @@ func ListPortfolios(c *fiber.Ctx) error {
 	return c.JSON(portfolios)
 }
 
+// Delete specified portfolio from DB
 func DeletePortfolio(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var portfolio models.Portfolio
@@ -59,10 +63,11 @@ func DeletePortfolio(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Portfolio deleted successfully"})
 }
 
+// Change name of portfolio in DB
 func RenamePortfolio(c *fiber.Ctx) error {
 	id := c.Params("id")
 	data := new(struct {
-		NewName string `json:"new_nitle"`
+		NewName string `json:"new_name"`
 	})
 	if err := c.BodyParser(data); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
